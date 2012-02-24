@@ -4,11 +4,67 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public abstract class Row {
-  String[] fields;
+  public enum Datatype {
+    TEXT, INT, DOUBLE, BOOL
+  };
+
+  Object[] fields;
 
   public abstract boolean isValid();
 
-  public String get(Object position) {
+  public abstract Datatype[] getSchema();
+
+  public boolean readFromLine(String line) {
+    String[] preformattedFields = getPreformattedFields(line);
+
+    try {
+      createFields(preformattedFields);
+    } catch (NumberFormatException e) {
+      return false;
+    } catch (ArrayIndexOutOfBoundsException e) {
+      return false;
+    }
+    return true;
+  }
+
+  private void createFields(String[] textFields) {
+    fields = new Object[textFields.length];
+    for (int i = 0; i < textFields.length; ++i) {
+      fields[i] = createObject(i, textFields[i]);
+    }
+  }
+
+  private String[] getPreformattedFields(String line) {
+    String[] textFields = line.split(",");
+    for (int i = 0; i < textFields.length; ++i) {
+      textFields[i] = removeQuotas(textFields[i]).trim();
+    }
+    return textFields;
+  }
+
+  private String removeQuotas(String field) {
+    if (field.startsWith("\"") && field.endsWith("\"")) {
+      String unqoutedString = field.substring(1, field.length() - 1);
+      return unqoutedString.replaceAll("\\\\\"", "\"");
+    }
+    return field;
+  }
+
+  private Object createObject(int i, String textField) {
+    switch (getSchema()[i]) {
+      case DOUBLE:
+        return Double.parseDouble(textField);
+      case INT:
+        return Integer.parseInt(textField);
+      case TEXT:
+        return textField;
+      case BOOL:
+        return textField.equals("1");
+    }
+    return null;
+  }
+
+  private Object get(Object position) {
     if (position instanceof Integer) {
       return fields[(Integer) position];
     }
@@ -21,31 +77,20 @@ public abstract class Row {
     return null;
   }
 
+  public String getString(Object position) {
+    return (String) get(position);
+  }
+
   public int getInt(Object position) {
-    return Integer.parseInt(get(position));
+    return (Integer) get(position);
   }
 
   public double getDouble(Object position) {
-    return Double.parseDouble(get(position));
+    return (Double) get(position);
   }
 
   public boolean getBoolean(Object position) {
-    return get(position).equals("1");
-  }
-
-  public void readFromLine(String line) {
-    fields = line.split(",");
-    for (int i = 0; i < fields.length; ++i) {
-      fields[i] = removeQuotas(fields[i]).trim();
-    }
-  }
-
-  private String removeQuotas(String field) {
-    if (field.startsWith("\"") && field.endsWith("\"")) {
-      String unqoutedString = field.substring(1, field.length() - 1);
-      return unqoutedString.replaceAll("\\\\\"", "\"");
-    }
-    return field;
+    return (Boolean) get(position);
   }
 
   @Override

@@ -20,24 +20,25 @@ public class AirportTest {
 
   @Test
   public void shouldParseSimpleLine() {
-    airport.readFromLine("\"0B1\",\"Col. Dyke \",\"Bethel\",\"ME\",\"USA\",44.42506444,-70.80784778");
-    assertAirportEqualsTo(airport, "0B1", "Col. Dyke", "Bethel", "ME", "USA", 44.42506444, -70.80784778);
+    assertAirportEqualsTo("\"0B1\",\"Col. Dyke \",\"Bethel\",\"ME\",\"USA\",44.42506444,-70.80784778",
+        "0B1", "Col. Dyke", "Bethel", "ME", "USA", 44.42506444, -70.80784778);
   }
 
   @Test
   public void shouldParseLineWithEscapeChar() {
-    airport.readFromLine("\"DBN\",\"W. H. \\\"Bud\\\" Barron \",\"Dublin\",\"GA\",\"USA\",32.56445806,-82.98525556");
-    assertAirportEqualsTo(airport, "DBN", "W. H. \"Bud\" Barron", "Dublin", "GA", "USA", 32.56445806, -82.98525556);
+    assertAirportEqualsTo("\"DBN\",\"W. H. \\\"Bud\\\" Barron \",\"Dublin\",\"GA\",\"USA\",32.56445806,-82.98525556",
+        "DBN", "W. H. \"Bud\" Barron", "Dublin", "GA", "USA", 32.56445806, -82.98525556);
   }
 
-  private void assertAirportEqualsTo(Airport airport, String id, String name, String city, String state, String country, double latitude,
+  private void assertAirportEqualsTo(String row, String id, String name, String city, String state, String country, double latitude,
       double longitude) {
+    assertThat(airport.readFromLine(row)).isTrue();
     assertThat(airport.isValid()).isTrue();
-    assertThat(airport.get(ID)).isEqualTo(id);
-    assertThat(airport.get(NAME)).isEqualTo(name);
-    assertThat(airport.get(CITY)).isEqualTo(city);
-    assertThat(airport.get(STATE)).isEqualTo(state);
-    assertThat(airport.get(COUNTRY)).isEqualTo(country);
+    assertThat(airport.getString(ID)).isEqualTo(id);
+    assertThat(airport.getString(NAME)).isEqualTo(name);
+    assertThat(airport.getString(CITY)).isEqualTo(city);
+    assertThat(airport.getString(STATE)).isEqualTo(state);
+    assertThat(airport.getString(COUNTRY)).isEqualTo(country);
     assertThat(airport.getDouble(LATITUDE)).isEqualTo(latitude);
     assertThat(airport.getDouble(LONGITUDE)).isEqualTo(longitude);
   }

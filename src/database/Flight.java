@@ -7,6 +7,9 @@ import static database.Flight.Attribute.DAY_OF_WEEK;
 import static database.Flight.Attribute.DEPARTURE_TIME;
 import static database.Flight.Attribute.DISTANCE;
 import static database.Flight.Attribute.MONTH;
+import static database.Row.Datatype.BOOL;
+import static database.Row.Datatype.INT;
+import static database.Row.Datatype.TEXT;
 import static tools.MathTools.isInRange;
 
 public class Flight extends Row {
@@ -19,19 +22,25 @@ public class Flight extends Row {
   }
 
   @Override
+  public Datatype[] getSchema() {
+    return new Datatype[] {
+        INT, INT, INT, INT,
+        INT, INT, TEXT,
+        INT, INT, TEXT,
+        TEXT, INT, BOOL, INT
+    };
+  }
+
+  @Override
   public boolean isValid() {
-    try {
-      return fields.length == 14
-          && isInRange(getInt(MONTH), 1, 12)
-          && isInRange(getInt(DAY_OF_MONTH), 1, 31)
-          && isInRange(getInt(DAY_OF_WEEK), 1, 7)
-          && getInt(ACTUAL_ELAPSED_TIME) > 0
-          && isInRange(getInt(DISTANCE), 0, 40000)
-          && isTimeValid(DEPARTURE_TIME)
-          && isTimeValid(ARRIVAL_TIME);
-    } catch (NumberFormatException e) {
-      return false;
-    }
+    return fields.length == 14
+        && isInRange(getInt(MONTH), 1, 12)
+        && isInRange(getInt(DAY_OF_MONTH), 1, 31)
+        && isInRange(getInt(DAY_OF_WEEK), 1, 7)
+        && getInt(ACTUAL_ELAPSED_TIME) > 0
+        && isInRange(getInt(DISTANCE), 0, 40000)
+        && isTimeValid(DEPARTURE_TIME)
+        && isTimeValid(ARRIVAL_TIME);
   }
 
   private boolean isTimeValid(Attribute position) {
