@@ -21,8 +21,14 @@ public class Airport extends Row {
 
   @Override
   public boolean isValid() {
-    return fields.length == 7
+    return fields.size() == 7
         && isInRange(getDouble(LATITUDE), 0, 90)
         && isInRange(getDouble(LONGITUDE), -180, 180);
+  }
+
+  public Airport() {}
+
+  public Airport(String line) {
+    readFromLine(line);
   }
 }

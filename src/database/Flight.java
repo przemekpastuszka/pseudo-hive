@@ -33,7 +33,7 @@ public class Flight extends Row {
 
   @Override
   public boolean isValid() {
-    return fields.length == 14
+    return fields.size() == 14
         && isInRange(getInt(MONTH), 1, 12)
         && isInRange(getInt(DAY_OF_MONTH), 1, 31)
         && isInRange(getInt(DAY_OF_WEEK), 1, 7)

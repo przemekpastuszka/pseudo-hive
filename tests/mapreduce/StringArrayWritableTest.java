@@ -23,7 +23,7 @@ public class StringArrayWritableTest {
 
   @Test
   public void shouldPersistNonEmptyList() throws IOException {
-    shouldPersistTextList(asList("ala", "ma", "kota", "a", "kot", "ma", "kiłę"));
+    shouldPersistTextList(asList("ala", "has", "cat", "and", "cat", "has", "syphilis"));
   }
 
   @Test
@@ -34,6 +34,23 @@ public class StringArrayWritableTest {
     assertThat(compare(asList("aa"), asList("aa", "aa"))).isLessThan(0);
     assertThat(compare(asList("aa", "aa"), asList("aa"))).isGreaterThan(0);
     assertThat(compare(asList("bd"), asList("ba", "aa"))).isGreaterThan(0);
+  }
+
+  @Test
+  public void shouldGenerateTheSameHashCode() {
+    List<String> ls = asList("soup", "is", "salty");
+    assertThat(compareHashes(ls, ls)).isZero();
+  }
+
+  @Test
+  public void shouldGenerateDifferentHashCode() {
+    assertThat(compareHashes(asList("mushroom", "soup"), asList("mushroom", "pie"))).isNotEqualTo(0);
+  }
+
+  private int compareHashes(List<String> a, List<String> b) {
+    Integer left = new StringArrayWritable(a).hashCode();
+    Integer right = new StringArrayWritable(b).hashCode();
+    return left.compareTo(right);
   }
 
   private int compare(List<String> a, List<String> b) {

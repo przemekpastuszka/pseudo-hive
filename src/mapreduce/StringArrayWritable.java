@@ -14,8 +14,7 @@ public class StringArrayWritable implements WritableComparable<StringArrayWritab
 
   private List<String> texts = new LinkedList<String>();
 
-  public StringArrayWritable() {
-  }
+  public StringArrayWritable() {}
 
   public StringArrayWritable(List<String> ls) {
     texts.addAll(ls);
@@ -62,4 +61,16 @@ public class StringArrayWritable implements WritableComparable<StringArrayWritab
     return texts.iterator();
   }
 
+  @Override
+  public boolean equals(Object other) {
+    if (other instanceof StringArrayWritable) {
+      return this.compareTo((StringArrayWritable) other) == 0;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return texts.hashCode();
+  }
 }

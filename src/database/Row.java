@@ -1,14 +1,18 @@
 package database;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-public abstract class Row {
+public abstract class Row implements Iterable<Object> {
   public enum Datatype {
     TEXT, INT, DOUBLE, BOOL
   };
 
-  Object[] fields;
+  List<Object> fields;
 
   public abstract boolean isValid();
 
@@ -28,9 +32,9 @@ public abstract class Row {
   }
 
   private void createFields(String[] textFields) {
-    fields = new Object[textFields.length];
+    fields = new ArrayList<Object>(textFields.length);
     for (int i = 0; i < textFields.length; ++i) {
-      fields[i] = createObject(i, textFields[i]);
+      fields.add(createObject(i, textFields[i]));
     }
   }
 
@@ -64,14 +68,14 @@ public abstract class Row {
     return null;
   }
 
-  private Object get(Object position) {
+  public Object get(Object position) {
     if (position instanceof Integer) {
-      return fields[(Integer) position];
+      return fields.get((Integer) position);
     }
 
     if (position instanceof Enum) {
       Enum<?> enumeration = (Enum<?>) position;
-      return fields[enumeration.ordinal()];
+      return fields.get(enumeration.ordinal());
     }
 
     return null;
@@ -101,5 +105,10 @@ public abstract class Row {
   @Override
   public int hashCode() {
     return HashCodeBuilder.reflectionHashCode(this);
+  }
+
+  @Override
+  public Iterator<Object> iterator() {
+    return fields.iterator();
   }
 }
