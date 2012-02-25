@@ -56,12 +56,8 @@ public class PseudoHiveMapperTest {
     when(context.getCounter(MALFORMED_RECORDS)).thenReturn(malformedRecords);
     when(context.getCounter(ORPHANED_RECORDS)).thenReturn(orphanedRecords);
 
-    prepareJoinedTable();
-    mapper.groupByOperators = asList(citySelector);
     mapper.selectOperators = asList(constA, distanceSelector);
-    mapper.mainTableJoinKey = ORIGIN.ordinal();
     mapper.mainTableRowClass = Flight.class;
-    mapper.useJoinTable = true;
   }
 
   @Test
@@ -80,6 +76,8 @@ public class PseudoHiveMapperTest {
 
   @Test
   public void shouldMapRowsCorrectlyWhenJoinIsUsed() throws IOException, InterruptedException {
+    prepareMapperForJoinedTables();
+
     invokeMapOnSampleValues();
 
     verifyWriteOnContext(asList("Bethel"), asList("A", "1846"));
@@ -90,10 +88,10 @@ public class PseudoHiveMapperTest {
 
   protected void invokeMapOnSampleValues() throws IOException, InterruptedException {
     map("1987,10,1,4,1,556,AA,190,247,0B1,ORD,1846,0,2"); // good
-    map("1987,10,1,4,1,556,AA,190,247,0B1,ORD,10,0,lala"); // bad - "lala" as delay
-    map("1987,10,1,4,1,577,AA,190,247,0B1,ORD,1846,0,2"); // bad - arrival time is 5:77
+    map("1987,10,1,4,1,556,AA,190,247,0B1,ORD,10,0,lala"); // malformed - "lala" as delay
+    map("1987,10,1,4,1,577,AA,190,247,0B1,ORD,1846,0,2"); // malformed - arrival time is 5:77
     map("2008,10,31,5,2359,356,B6,739,226,DBN,PSE,1617,0,-13"); // good
-    map("2008,10,31,5,2359,356,B6,739,226,ZXC,PSE,200,0,-13"); // bad - "ZXC" does not match any row in joined table
+    map("2008,10,31,5,2359,356,B6,739,226,ZXC,PSE,200,0,-13"); // orphaned - "ZXC" does not match any row in joined table
   }
 
   private void map(String text) throws IOException, InterruptedException {
@@ -104,10 +102,14 @@ public class PseudoHiveMapperTest {
     verify(context).write(new StringArrayWritable(a), new StringArrayWritable(b));
   }
 
-  private void prepareJoinedTable() {
+  private void prepareMapperForJoinedTables() {
     mapper.joinedTable = new HashMap<Object, Row>();
     mapper.joinedTable.put("0B1", new Airport("\"0B1\",\"Col. Dyke \",\"Bethel\",\"ME\",\"USA\",44.42506444,-70.80784778"));
     mapper.joinedTable.put("DBN", new Airport("\"DBN\",\"W. H. \\\"Bud\\\" Barron \",\"Dublin\",\"GA\",\"USA\",32.56445806,-82.98525556"));
+
+    mapper.useJoinTable = true;
+    mapper.mainTableJoinKey = ORIGIN.ordinal();
+    mapper.groupByOperators = asList(citySelector);
   }
 
   private static class ColumnSelectorAnswer implements Answer<List<String>> {

@@ -1,13 +1,12 @@
 package database;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-public abstract class Row implements Iterable<Object> {
+public abstract class Row {
   public enum Datatype {
     TEXT, INT, DOUBLE, BOOL
   };
@@ -105,10 +104,5 @@ public abstract class Row implements Iterable<Object> {
   @Override
   public int hashCode() {
     return HashCodeBuilder.reflectionHashCode(this);
-  }
-
-  @Override
-  public Iterator<Object> iterator() {
-    return fields.iterator();
   }
 }

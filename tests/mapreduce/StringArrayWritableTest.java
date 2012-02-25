@@ -16,6 +16,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class StringArrayWritableTest {
 
+  @SuppressWarnings("unchecked")
   @Test
   public void shouldPersistEmptyList() throws IOException {
     shouldPersistTextList(Collections.EMPTY_LIST);

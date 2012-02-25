@@ -9,13 +9,23 @@ import java.util.Map;
 
 import operators.Operator;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.StaxDriver;
+
 import database.Row;
 
 public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWritable, StringArrayWritable> {
+  public static final String SELECT_OPERATORS = "select_operators";
+  public static final String GROUP_BY_OPERATORS = "group_by_operators";
+  public static final String MAIN_TABLE_ROW_CLASS_NAME = "main_table_row_class_name";
+  public static final String MAIN_TABLE_JOIN_KEY = "main_table_join_key";
+  public static final String USE_JOIN_TABLE = "use_join_table";
+
   public enum OmittedRows {
     MALFORMED_RECORDS, ORPHANED_RECORDS
   };
@@ -27,8 +37,18 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
   List<Operator> groupByOperators, selectOperators;
   Class<? extends Row> mainTableRowClass;
 
+  @SuppressWarnings("unchecked")
   @Override
-  protected void setup(Context context) throws IOException, InterruptedException {}
+  protected void setup(Context context) throws IOException, InterruptedException {
+    Configuration conf = context.getConfiguration();
+    useJoinTable = conf.getBoolean(USE_JOIN_TABLE, false);
+    mainTableJoinKey = conf.getInt(MAIN_TABLE_JOIN_KEY, 0);
+    getMainTableRowClass(conf);
+
+    XStream xstream = new XStream(new StaxDriver());
+    groupByOperators = (List<Operator>) xstream.fromXML(conf.get(GROUP_BY_OPERATORS));
+    selectOperators = (List<Operator>) xstream.fromXML(conf.get(SELECT_OPERATORS));
+  }
 
   @Override
   protected void map(LongWritable key, Text value, Context context) throws IOException,
@@ -91,9 +111,20 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
     }
   }
 
+  @SuppressWarnings("unchecked")
+  protected void getMainTableRowClass(Configuration conf) {
+    try {
+      mainTableRowClass = (Class<? extends Row>) Class.forName(conf.get(MAIN_TABLE_ROW_CLASS_NAME));
+    } catch (ClassNotFoundException e) {
+      new RuntimeException(e);
+    }
+  }
+
   private class MalformedRecordException extends Exception {
+    private static final long serialVersionUID = 931758288441250318L;
   }
 
   private class OrphanedRecordException extends Exception {
+    private static final long serialVersionUID = -9142462592805587297L;
   }
 }
