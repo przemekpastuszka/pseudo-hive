@@ -2,6 +2,7 @@ package mapreduce;
 
 import static mapreduce.PseudoHiveMapper.OmittedRows.MALFORMED_RECORDS;
 import static mapreduce.PseudoHiveMapper.OmittedRows.ORPHANED_RECORDS;
+import static tools.Settings.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -20,11 +21,6 @@ import com.thoughtworks.xstream.io.xml.StaxDriver;
 import database.Row;
 
 public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWritable, StringArrayWritable> {
-  public static final String SELECT_OPERATORS = "select_operators";
-  public static final String GROUP_BY_OPERATORS = "group_by_operators";
-  public static final String MAIN_TABLE_ROW_CLASS_NAME = "main_table_row_class_name";
-  public static final String MAIN_TABLE_JOIN_KEY = "main_table_join_key";
-  public static final String USE_JOIN_TABLE = "use_join_table";
 
   public enum OmittedRows {
     MALFORMED_RECORDS, ORPHANED_RECORDS
@@ -34,7 +30,7 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
   int mainTableJoinKey;
   boolean useJoinTable;
 
-  List<Operator> groupByOperators, selectOperators;
+  List<? extends Operator> groupByOperators, selectOperators;
   Class<? extends Row> mainTableRowClass;
 
   @SuppressWarnings("unchecked")
@@ -46,8 +42,10 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
     getMainTableRowClass(conf);
 
     XStream xstream = new XStream(new StaxDriver());
-    groupByOperators = (List<Operator>) xstream.fromXML(conf.get(GROUP_BY_OPERATORS));
-    selectOperators = (List<Operator>) xstream.fromXML(conf.get(SELECT_OPERATORS));
+    groupByOperators = (List<? extends Operator>) xstream.fromXML(conf.get(GROUP_BY_OPERATORS));
+    selectOperators = (List<? extends Operator>) xstream.fromXML(conf.get(SELECT_OPERATORS));
+
+    // TODO read joinedTable from distributed cache
   }
 
   @Override
@@ -74,7 +72,7 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
     context.write(outputKey, outputValue);
   }
 
-  protected StringArrayWritable mapRowsByOperators(Row row, Row joinedRow, List<Operator> operators) {
+  protected StringArrayWritable mapRowsByOperators(Row row, Row joinedRow, List<? extends Operator> operators) {
     StringArrayWritable result = new StringArrayWritable();
     for (Operator operator : operators) {
       result.addAll(operator.map(row, joinedRow));
