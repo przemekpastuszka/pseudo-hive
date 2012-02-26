@@ -2,7 +2,14 @@ package mapreduce;
 
 import static mapreduce.PseudoHiveMapper.OmittedRows.MALFORMED_RECORDS;
 import static mapreduce.PseudoHiveMapper.OmittedRows.ORPHANED_RECORDS;
-import static tools.Settings.*;
+import static tools.RowParser.instantiateNewRow;
+import static tools.RowParser.parseValue;
+import static tools.Settings.GROUP_BY_OPERATORS;
+import static tools.Settings.JOINED_TABLE_HASH_MAP;
+import static tools.Settings.MAIN_TABLE_JOIN_KEY;
+import static tools.Settings.MAIN_TABLE_ROW_CLASS_NAME;
+import static tools.Settings.SELECT_OPERATORS;
+import static tools.Settings.USE_JOIN_TABLE;
 
 import java.io.IOException;
 import java.util.List;
@@ -11,9 +18,14 @@ import java.util.Map;
 import operators.Operator;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+
+import tools.RowParser.MalformedRecordException;
 
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
@@ -33,19 +45,20 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
   List<? extends Operator> groupByOperators, selectOperators;
   Class<? extends Row> mainTableRowClass;
 
+  private XStream xstream = new XStream(new StaxDriver());
+
   @SuppressWarnings("unchecked")
   @Override
   protected void setup(Context context) throws IOException, InterruptedException {
     Configuration conf = context.getConfiguration();
     useJoinTable = conf.getBoolean(USE_JOIN_TABLE, false);
     mainTableJoinKey = conf.getInt(MAIN_TABLE_JOIN_KEY, 0);
-    getMainTableRowClass(conf);
+    mainTableRowClass = getRowClass(conf.get(MAIN_TABLE_ROW_CLASS_NAME));
 
-    XStream xstream = new XStream(new StaxDriver());
     groupByOperators = (List<? extends Operator>) xstream.fromXML(conf.get(GROUP_BY_OPERATORS));
     selectOperators = (List<? extends Operator>) xstream.fromXML(conf.get(SELECT_OPERATORS));
 
-    // TODO read joinedTable from distributed cache
+    loadJoinedTableFromDistributedCache(conf);
   }
 
   @Override
@@ -62,8 +75,8 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
 
   protected void map(Text value, Context context) throws MalformedRecordException, OrphanedRecordException, IOException,
       InterruptedException {
-    Row row = instantiateNewRow();
-    parseValue(value, row);
+    Row row = instantiateNewRow(mainTableRowClass);
+    parseValue(value.toString(), row);
 
     Row joinedRow = getJoinedRow(row);
 
@@ -91,35 +104,27 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
     return null;
   }
 
-  protected void parseValue(Text value, Row row) throws MalformedRecordException {
-    boolean readSuccess = row.readFromLine(value.toString());
-    if (readSuccess) {
-      readSuccess = row.isValid();
+  @SuppressWarnings("unchecked")
+  protected Class<? extends Row> getRowClass(String className) {
+    try {
+      return (Class<? extends Row>) Class.forName(className);
+    } catch (ClassNotFoundException e) {
+      new RuntimeException(e);
     }
-    if (readSuccess == false) {
-      throw new MalformedRecordException();
-    }
+    return null;
   }
 
-  private Row instantiateNewRow() {
-    try {
-      return mainTableRowClass.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new RuntimeException(e);
+  protected void loadJoinedTableFromDistributedCache(Configuration conf) throws IOException {
+    if (useJoinTable) {
+      loadJoinTableFrom(conf, new Path(JOINED_TABLE_HASH_MAP));
     }
   }
 
   @SuppressWarnings("unchecked")
-  protected void getMainTableRowClass(Configuration conf) {
-    try {
-      mainTableRowClass = (Class<? extends Row>) Class.forName(conf.get(MAIN_TABLE_ROW_CLASS_NAME));
-    } catch (ClassNotFoundException e) {
-      new RuntimeException(e);
-    }
-  }
-
-  private class MalformedRecordException extends Exception {
-    private static final long serialVersionUID = 931758288441250318L;
+  protected void loadJoinTableFrom(Configuration conf, Path path) throws IOException {
+    FSDataInputStream joinedTableInHdfs = FileSystem.get(conf).open(path);
+    joinedTable = (Map<Object, Row>) xstream.fromXML(joinedTableInHdfs);
+    joinedTableInHdfs.close();
   }
 
   private class OrphanedRecordException extends Exception {
