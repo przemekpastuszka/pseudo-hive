@@ -30,6 +30,7 @@ public class StringArrayWritable implements WritableComparable<StringArrayWritab
 
   @Override
   public void readFields(DataInput in) throws IOException {
+    texts.clear();
     int n = in.readInt();
     for (int i = 0; i < n; ++i) {
       texts.add(Text.readString(in));
@@ -73,4 +74,15 @@ public class StringArrayWritable implements WritableComparable<StringArrayWritab
   public int hashCode() {
     return texts.hashCode();
   }
+
+  @Override
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    for (String text : texts) {
+      builder.append(text);
+      builder.append(",");
+    }
+    return builder.toString();
+  }
+
 }
