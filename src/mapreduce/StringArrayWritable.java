@@ -78,9 +78,11 @@ public class StringArrayWritable implements WritableComparable<StringArrayWritab
   @Override
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    for (String text : texts) {
-      builder.append(text);
-      builder.append(",");
+    for (Iterator<String> it = texts.iterator(); it.hasNext();) {
+      builder.append(it.next());
+      if (it.hasNext()) {
+        builder.append("\t");
+      }
     }
     return builder.toString();
   }

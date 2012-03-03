@@ -35,4 +35,9 @@ public class Sum extends AbstractOperator implements ExtendedOperator {
   public List<String> reduce() {
     return asList(Double.toString(sum));
   }
+
+  @Override
+  public List<String> combine() {
+    return reduce();
+  }
 }

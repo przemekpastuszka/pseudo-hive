@@ -28,7 +28,7 @@ public class PseudoHiveReducerTest {
   @Mock
   Context context;
 
-  PseudoHiveReducer reducer = new PseudoHiveReducer();
+  AbstractPseudoHiveReducerOrCombiner reducer = new PseudoHiveReducer();
 
   @Before
   public void setUp() {

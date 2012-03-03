@@ -10,4 +10,6 @@ public interface ExtendedOperator extends Operator {
   void iterate(List<String> ls);
 
   List<String> reduce();
+
+  List<String> combine();
 }

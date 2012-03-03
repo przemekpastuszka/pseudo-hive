@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import mapreduce.PseudoHiveCombiner;
 import mapreduce.PseudoHiveMapper;
 import mapreduce.PseudoHiveReducer;
 import mapreduce.StringArrayWritable;
@@ -106,7 +107,7 @@ public class PseudoHive extends Configured implements Tool {
     FileOutputFormat.setOutputPath(job, output);
 
     job.setMapperClass(PseudoHiveMapper.class);
-    // job.setCombinerClass(BigramsCountReducer.class);
+    job.setCombinerClass(PseudoHiveCombiner.class);
     job.setReducerClass(PseudoHiveReducer.class);
 
     job.setMapOutputKeyClass(StringArrayWritable.class);

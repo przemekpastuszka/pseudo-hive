@@ -1,9 +1,11 @@
 package main;
 
 import static database.Flight.Attribute.DELAY;
+import static database.Flight.Attribute.DISTANCE;
 import static database.Flight.Attribute.ORIGIN;
 import static java.util.Arrays.asList;
 import static operators.AbstractOperator.RowType.JOINED;
+import operators.Average;
 import operators.Selector;
 import operators.Sum;
 
@@ -28,7 +30,7 @@ public class Tester {
     hive.setGroupByOperators(asList(
         new Selector(ORIGIN),
         new Selector(Airport.Attribute.CITY, JOINED)));
-    hive.setSelectOperators(asList(new Sum(DELAY)));
+    hive.setSelectOperators(asList(new Sum(DISTANCE), new Average(DELAY)));
 
     int exitCode = ToolRunner.run(hive, args);
     System.exit(exitCode);
