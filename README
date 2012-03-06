@@ -5,6 +5,9 @@ apache commons logging 1.0.4
 hadoop-core-0.20.2-cdh3u3
 xstream 1.4.2
 
+xstream jar should be placed in hadoop's /lib directory
+(you may need also to restart hadoop after this)
+
 ADDITIONAL LIBRARIES FOR TESTS:
 --------------------
 junit 4.10-1
