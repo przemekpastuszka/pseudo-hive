@@ -2,9 +2,9 @@ package operators;
 
 import static database.Flight.Attribute.DELAY;
 import static java.util.Arrays.asList;
-import static operators.AbstractOperator.RowType.JOINED;
 import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tools.Settings.RowType.JOINED;
 
 import org.junit.Before;
 import org.junit.Test;

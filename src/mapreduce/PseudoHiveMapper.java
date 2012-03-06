@@ -1,9 +1,11 @@
 package mapreduce;
 
+import static mapreduce.PseudoHiveMapper.OmittedRows.FILTERED_RECORDS;
 import static mapreduce.PseudoHiveMapper.OmittedRows.MALFORMED_RECORDS;
 import static mapreduce.PseudoHiveMapper.OmittedRows.ORPHANED_RECORDS;
 import static tools.RowParser.instantiateNewRow;
 import static tools.RowParser.parseValue;
+import static tools.Settings.FILTERS;
 import static tools.Settings.GROUP_BY_OPERATORS;
 import static tools.Settings.JOINED_TABLE_HASH_MAP;
 import static tools.Settings.MAIN_TABLE_JOIN_KEY;
@@ -31,11 +33,12 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 import database.Row;
+import filters.Filter;
 
 public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWritable, StringArrayWritable> {
 
   public enum OmittedRows {
-    MALFORMED_RECORDS, ORPHANED_RECORDS
+    MALFORMED_RECORDS, ORPHANED_RECORDS, FILTERED_RECORDS
   };
 
   Map<Object, Row> joinedTable;
@@ -43,6 +46,7 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
   boolean useJoinTable;
 
   List<? extends Operator> groupByOperators, selectOperators;
+  List<? extends Filter> filters;
   Class<? extends Row> mainTableRowClass;
 
   private XStream xstream = new XStream(new StaxDriver());
@@ -57,6 +61,7 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
 
     groupByOperators = (List<? extends Operator>) xstream.fromXML(conf.get(GROUP_BY_OPERATORS));
     selectOperators = (List<? extends Operator>) xstream.fromXML(conf.get(SELECT_OPERATORS));
+    filters = (List<? extends Filter>) xstream.fromXML(conf.get(FILTERS));
 
     loadJoinedTableFromDistributedCache(conf);
   }
@@ -70,19 +75,30 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
       context.getCounter(MALFORMED_RECORDS).increment(1);
     } catch (OrphanedRecordException e) {
       context.getCounter(ORPHANED_RECORDS).increment(1);
+    } catch (FilteredRecordException e) {
+      context.getCounter(FILTERED_RECORDS).increment(1);
     }
   }
 
   protected void map(Text value, Context context) throws MalformedRecordException, OrphanedRecordException, IOException,
-      InterruptedException {
+      InterruptedException, FilteredRecordException {
     Row row = instantiateNewRow(mainTableRowClass);
     parseValue(value.toString(), row);
 
     Row joinedRow = getJoinedRow(row);
 
+    filterRecord(row, joinedRow);
     StringArrayWritable outputKey = mapRowsByOperators(row, joinedRow, groupByOperators);
     StringArrayWritable outputValue = mapRowsByOperators(row, joinedRow, selectOperators);
     context.write(outputKey, outputValue);
+  }
+
+  protected void filterRecord(Row row, Row joinedRow) throws FilteredRecordException {
+    for (Filter filter : filters) {
+      if (filter.filter(row, joinedRow) == false) {
+        throw new FilteredRecordException();
+      }
+    }
   }
 
   protected StringArrayWritable mapRowsByOperators(Row row, Row joinedRow, List<? extends Operator> operators) {
@@ -129,5 +145,9 @@ public class PseudoHiveMapper extends Mapper<LongWritable, Text, StringArrayWrit
 
   private class OrphanedRecordException extends Exception {
     private static final long serialVersionUID = -9142462592805587297L;
+  }
+
+  private class FilteredRecordException extends Exception {
+    private static final long serialVersionUID = -5364511061055717887L;
   }
 }

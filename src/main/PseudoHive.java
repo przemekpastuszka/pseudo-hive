@@ -2,6 +2,7 @@ package main;
 
 import static tools.RowParser.instantiateNewRow;
 import static tools.RowParser.parseValue;
+import static tools.Settings.FILTERS;
 import static tools.Settings.GROUP_BY_OPERATORS;
 import static tools.Settings.JOINED_TABLE_HASH_MAP;
 import static tools.Settings.MAIN_TABLE_JOIN_KEY;
@@ -15,6 +16,7 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,12 +44,14 @@ import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
 
 import database.Row;
+import filters.Filter;
 
 public class PseudoHive extends Configured implements Tool {
 
   Path mainInput, joinInput, output;
-  List<? extends Operator> groupByOperators;
-  List<? extends ExtendedOperator> selectOperators;
+  List<? extends Operator> groupByOperators = new LinkedList<Operator>();
+  List<? extends ExtendedOperator> selectOperators = new LinkedList<ExtendedOperator>();
+  List<? extends Filter> filters = new LinkedList<Filter>();
   String mainTableRowClassName;
 
   Class<? extends Row> joinedTableRowClass;
@@ -88,6 +92,10 @@ public class PseudoHive extends Configured implements Tool {
     useJoinTable = true;
   }
 
+  public void setFilters(List<? extends Filter> filters) {
+    this.filters = filters;
+  }
+
   private XStream xstream = new XStream(new StaxDriver());
 
   @Override
@@ -99,6 +107,7 @@ public class PseudoHive extends Configured implements Tool {
     conf.set(MAIN_TABLE_ROW_CLASS_NAME, mainTableRowClassName);
     conf.set(GROUP_BY_OPERATORS, xstream.toXML(groupByOperators));
     conf.set(SELECT_OPERATORS, xstream.toXML(selectOperators));
+    conf.set(FILTERS, xstream.toXML(filters));
 
     Job job = new Job(conf);
     job.setJarByClass(PseudoHive.class);

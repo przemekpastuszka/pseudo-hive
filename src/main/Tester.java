@@ -3,8 +3,9 @@ package main;
 import static database.Flight.Attribute.DELAY;
 import static database.Flight.Attribute.DISTANCE;
 import static database.Flight.Attribute.ORIGIN;
+import static filters.SimpleFilter.FilterType.GREATER;
 import static java.util.Arrays.asList;
-import static operators.AbstractOperator.RowType.JOINED;
+import static tools.Settings.RowType.JOINED;
 import operators.Average;
 import operators.Selector;
 import operators.Sum;
@@ -14,6 +15,7 @@ import org.apache.hadoop.util.ToolRunner;
 
 import database.Airport;
 import database.Flight;
+import filters.SimpleFilter;
 
 public class Tester {
 
@@ -27,6 +29,7 @@ public class Tester {
     hive.setJoinedRowClass(Airport.class);
     hive.setJoinKeys(ORIGIN, Airport.Attribute.ID);
 
+    hive.setFilters(asList(new SimpleFilter(DELAY, GREATER, "10")));
     hive.setGroupByOperators(asList(
         new Selector(ORIGIN),
         new Selector(Airport.Attribute.CITY, JOINED)));

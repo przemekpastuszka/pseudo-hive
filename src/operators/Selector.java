@@ -1,5 +1,6 @@
 package operators;
 
+import tools.Settings;
 
 public class Selector extends AbstractOperator implements Operator {
 
@@ -7,7 +8,7 @@ public class Selector extends AbstractOperator implements Operator {
     super(enumeration);
   }
 
-  public Selector(Enum<?> enumeration, RowType type) {
+  public Selector(Enum<?> enumeration, Settings.RowType type) {
     super(enumeration, type);
   }
 }

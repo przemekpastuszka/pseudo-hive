@@ -3,10 +3,11 @@ package operators;
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.asList;
-import static operators.AbstractOperator.RowType.MAIN;
+import static tools.Settings.RowType.MAIN;
 
 import java.util.List;
 
+import tools.Settings.RowType;
 import database.Row;
 
 public class Average extends AbstractOperator implements ExtendedOperator {

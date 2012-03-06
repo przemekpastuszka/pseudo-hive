@@ -1,26 +1,23 @@
 package operators;
 
 import static java.util.Arrays.asList;
-import static operators.AbstractOperator.RowType.MAIN;
+import static tools.Settings.RowType.MAIN;
 
 import java.util.List;
 
+import tools.Settings;
 import database.Row;
 
 public abstract class AbstractOperator implements Operator {
 
-  public enum RowType {
-    MAIN, JOINED
-  }
-
   protected int columnId;
-  protected RowType rowType;
+  protected Settings.RowType rowType;
 
   public AbstractOperator(Enum<?> enumeration) {
     this(enumeration, MAIN);
   }
 
-  public AbstractOperator(Enum<?> enumeration, RowType type) {
+  public AbstractOperator(Enum<?> enumeration, Settings.RowType type) {
     columnId = enumeration.ordinal();
     rowType = type;
   }

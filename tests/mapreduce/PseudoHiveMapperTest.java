@@ -1,9 +1,11 @@
 package mapreduce;
 
 import static database.Airport.Attribute.CITY;
+import static database.Flight.Attribute.DELAY;
 import static database.Flight.Attribute.DISTANCE;
 import static database.Flight.Attribute.ORIGIN;
 import static java.util.Arrays.asList;
+import static mapreduce.PseudoHiveMapper.OmittedRows.FILTERED_RECORDS;
 import static mapreduce.PseudoHiveMapper.OmittedRows.MALFORMED_RECORDS;
 import static mapreduce.PseudoHiveMapper.OmittedRows.ORPHANED_RECORDS;
 import static org.mockito.Matchers.any;
@@ -34,6 +36,7 @@ import org.mockito.stubbing.Answer;
 import database.Airport;
 import database.Flight;
 import database.Row;
+import filters.Filter;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PseudoHiveMapperTest {
@@ -43,7 +46,9 @@ public class PseudoHiveMapperTest {
   @Mock
   Context context;
   @Mock
-  Counter malformedRecords, orphanedRecords;
+  Counter malformedRecords, orphanedRecords, filteredRecords;
+  @Mock
+  Filter filter;
 
   PseudoHiveMapper mapper = new PseudoHiveMapper();
 
@@ -53,9 +58,19 @@ public class PseudoHiveMapperTest {
     when(distanceSelector.map(any(Row.class), any(Row.class))).thenAnswer(new ColumnSelectorAnswer(0, DISTANCE.ordinal()));
     when(citySelector.map(any(Row.class), any(Row.class))).thenAnswer(new ColumnSelectorAnswer(1, CITY.ordinal()));
 
+    when(filter.filter(any(Row.class), any(Row.class))).thenAnswer(new Answer() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        Row row = (Row) invocation.getArguments()[0];
+        return row.getInt(DELAY) != -20;
+      }
+    });
+
     when(context.getCounter(MALFORMED_RECORDS)).thenReturn(malformedRecords);
     when(context.getCounter(ORPHANED_RECORDS)).thenReturn(orphanedRecords);
+    when(context.getCounter(FILTERED_RECORDS)).thenReturn(filteredRecords);
 
+    mapper.filters = asList(filter);
     mapper.selectOperators = asList(constA, distanceSelector);
     mapper.mainTableRowClass = Flight.class;
   }
@@ -72,6 +87,7 @@ public class PseudoHiveMapperTest {
     verifyWriteOnContext(asList("A"), asList("A", "200"));
     verify(malformedRecords, times(2)).increment(1);
     verify(orphanedRecords, never()).increment(anyInt());
+    verify(filteredRecords, times(1)).increment(1);
   }
 
   @Test
@@ -84,6 +100,7 @@ public class PseudoHiveMapperTest {
     verifyWriteOnContext(asList("Dublin"), asList("A", "1617"));
     verify(malformedRecords, times(2)).increment(1);
     verify(orphanedRecords, times(1)).increment(1);
+    verify(filteredRecords, times(1)).increment(1);
   }
 
   protected void invokeMapOnSampleValues() throws IOException, InterruptedException {
@@ -91,6 +108,7 @@ public class PseudoHiveMapperTest {
     map("1987,10,1,4,1,556,AA,190,247,0B1,ORD,10,0,lala"); // malformed - "lala" as delay
     map("1987,10,1,4,1,577,AA,190,247,0B1,ORD,1846,0,2"); // malformed - arrival time is 5:77
     map("2008,10,31,5,2359,356,B6,739,226,DBN,PSE,1617,0,-13"); // good
+    map("2008,10,31,5,2359,356,B6,739,226,DBN,PSE,1400,0,-20"); // filtered out
     map("2008,10,31,5,2359,356,B6,739,226,ZXC,PSE,200,0,-13"); // orphaned - "ZXC" does not match any row in joined table
   }
 

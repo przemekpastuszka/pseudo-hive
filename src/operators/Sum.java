@@ -5,6 +5,8 @@ import static java.util.Arrays.asList;
 
 import java.util.List;
 
+import tools.Settings;
+
 public class Sum extends AbstractOperator implements ExtendedOperator {
   private double sum;
 
@@ -12,7 +14,7 @@ public class Sum extends AbstractOperator implements ExtendedOperator {
     super(enumeration);
   }
 
-  public Sum(Enum<?> enumeration, RowType type) {
+  public Sum(Enum<?> enumeration, Settings.RowType type) {
     super(enumeration, type);
   }
 
