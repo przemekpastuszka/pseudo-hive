@@ -1,3 +1,8 @@
+/*
+ * Pastuszka Przemyslaw
+ * University of Wroclaw, Poland
+ * 2012
+ */
 package mapreduce;
 
 import static database.Airport.Attribute.CITY;
