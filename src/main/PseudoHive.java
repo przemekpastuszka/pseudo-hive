@@ -28,7 +28,6 @@ import operators.ExtendedOperator;
 import operators.Operator;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -36,7 +35,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.Tool;
 
 import tools.RowParser.MalformedRecordException;
 
@@ -46,7 +44,7 @@ import com.thoughtworks.xstream.io.xml.StaxDriver;
 import database.Row;
 import filters.Filter;
 
-public class PseudoHive extends Configured implements Tool {
+public class PseudoHive {
 
   Path mainInput, joinInput, output;
   List<? extends Operator> groupByOperators = new LinkedList<Operator>();
@@ -98,10 +96,7 @@ public class PseudoHive extends Configured implements Tool {
 
   private XStream xstream = new XStream(new StaxDriver());
 
-  @Override
-  public int run(String[] args) throws Exception {
-    Configuration conf = getConf();
-
+  public int run(Configuration conf) throws Exception {
     setUpJoin(conf);
 
     conf.set(MAIN_TABLE_ROW_CLASS_NAME, mainTableRowClassName);
